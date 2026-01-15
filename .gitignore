@@ -1,0 +1,62 @@
+# Build directories
+.pio
+.pioenvs
+.piolibdeps
+.pytest_cache
+
+# PlatformIO
+.platformio/
+.buildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs
+build/
+dist/
+*.hex
+*.elf
+*.bin
+*.elf.size
+
+# Dependencies
+.pio/libdeps/
+
+# Environment files
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Editor backups
+*.bak
+*.tmp
+
+# OS files
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Firmware images
+firmware/*.hex
+firmware/*.elf
+firmware/*.bin
+
+# Test outputs
+.coverage
+htmlcov/

@@ -1,0 +1,23 @@
+{
+  "name": "izar-mqtt-bridge",
+  "version": "1.0.0",
+  "description": "M5 Stack Water Meter MQTT Device with LoRa and Home Assistant Discovery",
+  "keywords": [
+    "M5Stack",
+    "Unit-C6L",
+    "ESP32",
+    "MQTT",
+    "Home Assistant",
+    "Water Meter",
+    "M-bus",
+    "LoRa",
+    "SX1262",
+    "IoT"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aclii/izar-mqtt-bridge.git"
+  },
+  "author": "Konstantin Babin",
+  "license": "MIT"
+}

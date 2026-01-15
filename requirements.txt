@@ -1,0 +1,5 @@
+# Python dependencies for IZAR MQTT Water Meter Project
+# Install with: pip install -r requirements.txt
+
+# PlatformIO - Embedded development platform
+platformio>=6.1.0
