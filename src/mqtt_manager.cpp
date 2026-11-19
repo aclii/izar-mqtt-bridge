@@ -6,6 +6,10 @@
 
 MqttManager mqttManager;
 
+namespace {
+constexpr char kHomeAssistantStatusTopic[] = HA_DISCOVERY_PREFIX "/status";
+}
+
 MqttManager::MqttManager() : client(espClient) {}
 
 bool MqttManager::init() {
@@ -14,7 +18,7 @@ bool MqttManager::init() {
     client.setCallback(staticMqttCallback);
     client.setBufferSize(MQTT_MAX_PACKET_SIZE);
     updateTopics();
-    discoveryPublished = false;
+    rediscoveryPending = false;
     LOG_INFO("MQTT", "Manager initialized successfully");
     return true;
 }
@@ -73,10 +77,9 @@ bool MqttManager::connect() {
         LOG_INFO("MQTT", "Connected!");
         publish(getTopicStatus(), "online", true);
         subscribe(getTopicCommand());
-        if (!discoveryPublished) {
-            publishDiscoveryAll();
-            discoveryPublished = true;
-        }
+        subscribe(kHomeAssistantStatusTopic);
+        rediscoveryPending = false;
+        publishDiscoveryAll();
         return true;
     } else {
         LOG_ERROR("MQTT", "Connection failed, rc=%d", client.state());
@@ -93,19 +96,34 @@ void MqttManager::disconnect() {
         client.disconnect();
         LOG_INFO("MQTT", "Disconnected");
     }
+    rediscoveryPending = false;
 }
 
 void MqttManager::handle() {
+    if (!wifiManager.isWiFiConnected()) {
+        disconnect();
+        return;
+    }
+
     if (!client.connected()) {
         unsigned long now = millis();
-        if (now - lastReconnectAttempt > MQTT_RECONNECT_INTERVAL) {
-            lastReconnectAttempt = now;
-            if (connect()) {
-                lastReconnectAttempt = 0;
-            }
+        if (lastReconnectAttempt == 0 || now - lastReconnectAttempt >= MQTT_RECONNECT_INTERVAL) {
+            connect();
+            lastReconnectAttempt = millis();
         }
-    } else {
-        client.loop();
+        return;
+    }
+
+    if (!client.loop()) {
+        LOG_WARN("MQTT", "Connection lost; will retry");
+        return;
+    }
+
+    if (rediscoveryPending) {
+        rediscoveryPending = false;
+        LOG_INFO("MQTT", "Home Assistant is online; republishing discovery");
+        publishDiscoveryAll();
+        publish(getTopicStatus(), "online", true);
     }
 }
 
@@ -147,6 +165,14 @@ void MqttManager::setCallback(MqttCallbackFunction callback) {
 
 void MqttManager::mqttCallback(char* topic, byte* payload, unsigned int length) {
     LOG_DEBUG("MQTT", "Message from %s", topic);
+
+    if (strcmp(topic, kHomeAssistantStatusTopic) == 0) {
+        if (length == strlen("online") && memcmp(payload, "online", length) == 0) {
+            // Publish after client.loop() returns; the callback payload uses its MQTT buffer.
+            rediscoveryPending = true;
+        }
+        return;
+    }
 
     if (externalCallback != nullptr) {
         externalCallback(topic, payload, length);

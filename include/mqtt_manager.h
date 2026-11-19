@@ -15,7 +15,7 @@ class MqttManager {
     PubSubClient client;
     unsigned long lastReconnectAttempt = 0;
     MqttCallbackFunction externalCallback = nullptr;
-    bool discoveryPublished = false;
+    bool rediscoveryPending = false;
 
     char topicStatus[128]{};
     char topicReading[128]{};

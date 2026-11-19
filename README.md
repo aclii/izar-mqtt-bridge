@@ -161,6 +161,8 @@ Defaults live in `include/config.h` and should not be edited for day‑to‑day 
 - LAN: `http://<device-ip>/`
 - AP fallback: `http://192.168.4.1/`
 
+If a configured WiFi network is unavailable, the fallback AP starts after a 20-second connection attempt. The bridge keeps receiving meter packets and retries WiFi every 30 seconds while the AP is active. Once WiFi connects, the AP and captive DNS server stop automatically. With no WiFi SSID configured, the AP stays available for setup.
+
 Note: the portal is unauthenticated on the local network. Restrict access to trusted networks only.
 
 Settings:
@@ -220,7 +222,7 @@ Base topic defaults to `home/water_meter`.
 
 ## Home Assistant
 
-Home Assistant discovery is published automatically on first successful MQTT connection.
+Home Assistant discovery is published on every MQTT connection. The bridge also subscribes to `homeassistant/status` and republishes discovery when Home Assistant announces `online` after its MQTT integration restarts. MQTT connection attempts repeat every 5 seconds while WiFi is connected.
 
 ### Optional Manual Sensors
 

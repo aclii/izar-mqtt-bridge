@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <algorithm>
 #include "config.h"
 #include "config_manager.h"
 #include "gpio_expander_manager.h"
@@ -290,7 +291,6 @@ void setup() {
 
     mqttManager.init();
     mqttManager.setCallback(mqttMessageCallback);
-    mqttManager.connect();
 
     // Start web configuration server
     webConfigServer.begin();
@@ -398,16 +398,9 @@ void wmBusPacketCallback(const char* meterId, const uint8_t* fullwMBusFrame, uin
 
         // Discovery mode - add to list if new or update RSSI
         String meterIdStr = String(meterId);
-        int existingIndex = -1;
+        auto existingMeter = std::find(discoveredMeters.begin(), discoveredMeters.end(), meterIdStr);
 
-        for (int i = 0; i < discoveredMeters.size(); i++) {
-            if (discoveredMeters[i] == meterIdStr) {
-                existingIndex = i;
-                break;
-            }
-        }
-
-        if (existingIndex == -1) {
+        if (existingMeter == discoveredMeters.end()) {
             // New meter
             discoveredMeters.push_back(meterIdStr);
             discoveredRSSI.push_back(rssi);
@@ -417,6 +410,7 @@ void wmBusPacketCallback(const char* meterId, const uint8_t* fullwMBusFrame, uin
             }
         } else {
             // Update RSSI for existing meter
+            int existingIndex = static_cast<int>(existingMeter - discoveredMeters.begin());
             discoveredRSSI[existingIndex] = rssi;
             // Update display if this is the currently selected meter
             if (existingIndex == selectedMeterIndex && ENABLE_DISPLAY) {

@@ -5,13 +5,14 @@
 #include "web_logger.h"
 
 #define PROJECT_NAME "IZAR RC 686 I W R4 Water Meter MQTT Bridge"
-#define PROJECT_VERSION "1.0.0"
+#define PROJECT_VERSION "1.0.1"
 
 // ============ WiFi Configuration Defaults ============
 #define WIFI_SSID_DEFAULT "YOUR_SSID"
 #define WIFI_PASSWORD_DEFAULT "YOUR_PASSWORD"
 #define WIFI_HOSTNAME_DEFAULT "izar-mqtt-bridge"
 #define WIFI_CONNECTION_TIMEOUT 20000 // ms
+#define WIFI_RECONNECT_INTERVAL 30000 // ms after a failed connection attempt
 
 // ============ WiFi Access Point Defaults ============
 #define AP_SSID_PREFIX_DEFAULT "izar-mqtt-bridge-config"

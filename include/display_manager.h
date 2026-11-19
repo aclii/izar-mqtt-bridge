@@ -13,8 +13,8 @@ class DisplayManager {
     unsigned long lastUpdate = 0;
 
     // SPI sharing - protect bus access
-    void acquireSPIBus();
-    void releaseSPIBus();
+    static void acquireSPIBus();
+    static void releaseSPIBus();
 
   public:
     DisplayManager();
