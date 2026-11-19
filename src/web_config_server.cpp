@@ -694,6 +694,11 @@ void WebConfigServer::setupRoutes() {
 
 void WebConfigServer::startDnsIfNeeded() {
     if (dnsStarted) {
+        if (!wifiManager.isApModeActive()) {
+            dnsServer.stop();
+            dnsStarted = false;
+            LOG_INFO("Web", "DNS captive portal stopped");
+        }
         return;
     }
 

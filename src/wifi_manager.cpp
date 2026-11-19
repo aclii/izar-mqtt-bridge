@@ -13,52 +13,71 @@ bool WiFiManager::init() {
 }
 
 bool WiFiManager::connect() {
-    if (apModeActive) {
-        return false;
+    if (isWiFiConnected()) {
+        if (!isConnected) {
+            isConnected = true;
+            connectionInProgress = false;
+            connectAttempted = false;
+            printWiFiStatus();
+            startMdns();
+        }
+        if (apModeActive && WiFi.softAPdisconnect(true)) {
+            apModeActive = false;
+            LOG_INFO("WiFi", "Configuration AP stopped");
+        }
+        return true;
     }
 
     if (isConnected) {
-        return true;
+        isConnected = false;
+        if (mdnsStarted) {
+            MDNS.end();
+            mdnsStarted = false;
+        }
+        LOG_WARN("WiFi", "Connection lost");
     }
 
     const Config& config = configManager.getConfig();
     if (strlen(config.wifiSSID) == 0 || strcmp(config.wifiSSID, WIFI_SSID_DEFAULT) == 0) {
-        LOG_INFO("WiFi", "WiFi SSID not configured - starting AP for configuration");
+        if (!apModeActive) {
+            LOG_INFO("WiFi", "WiFi SSID not configured - starting AP for configuration");
+        }
         startAccessPoint();
         return false;
     }
 
     unsigned long now = millis();
-    if (now - lastConnectAttempt < 5000) {
-        return false; // Too soon to retry
+    if (connectionInProgress) {
+        if (now - lastConnectAttempt < WIFI_CONNECTION_TIMEOUT) {
+            return false;
+        }
+        connectionInProgress = false;
+        lastConnectAttempt = now;
+        WiFi.disconnect(false);
+        LOG_ERROR("WiFi", "Connection timed out; retrying in %lu seconds", WIFI_RECONNECT_INTERVAL / 1000UL);
+        startAccessPoint();
+        return false;
+    }
+
+    if (connectAttempted && now - lastConnectAttempt < WIFI_RECONNECT_INTERVAL) {
+        return false;
     }
 
     lastConnectAttempt = now;
+    connectAttempted = true;
+    connectionInProgress = true;
 
     if (strlen(config.hostname) > 0) {
         WiFi.setHostname(config.hostname);
     }
 
     LOG_INFO("WiFi", "Connecting to %s", config.wifiSSID);
-    WiFi.begin(config.wifiSSID, config.wifiPassword);
-
-    unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - start < WIFI_CONNECTION_TIMEOUT) {
-        delay(500);
-        LOG_DEBUG("WiFi", ".");
+    if (WiFi.begin(config.wifiSSID, config.wifiPassword) == WL_CONNECT_FAILED) {
+        connectionInProgress = false;
+        lastConnectAttempt = millis();
+        LOG_ERROR("WiFi", "Could not start connection; retrying in %lu seconds", WIFI_RECONNECT_INTERVAL / 1000UL);
+        startAccessPoint();
     }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        isConnected = true;
-        apModeActive = false;
-        printWiFiStatus();
-        startMdns();
-        return true;
-    }
-
-    isConnected = false;
-    LOG_ERROR("WiFi", "Connection failed");
-    startAccessPoint();
     return false;
 }
 
@@ -66,28 +85,8 @@ bool WiFiManager::isWiFiConnected() {
     return WiFi.status() == WL_CONNECTED;
 }
 
-void WiFiManager::reconnect() {
-    if (apModeActive) {
-        return;
-    }
-
-    if (!isWiFiConnected()) {
-        connect();
-    }
-}
-
 void WiFiManager::handleWiFi() {
-    if (apModeActive) {
-        return;
-    }
-
-    if (!isWiFiConnected()) {
-        isConnected = false;
-        reconnect();
-    } else {
-        isConnected = true;
-        startMdns();
-    }
+    connect();
 }
 
 bool WiFiManager::isApModeActive() {

@@ -32,9 +32,12 @@ jobs:
 
       - name: Static analysis (cppcheck)
         run: |
+          # Model Arduino's PROGMEM macro; keep informational and API-style hints from failing the build.
           cppcheck --enable=all --inline-suppr --error-exitcode=1 \
             --suppress=missingIncludeSystem --suppress=missingInclude --suppress=unmatchedSuppression \
-            --language=c++ --std=c++17 -I include src include
+            --suppress=normalCheckLevelMaxBranches --suppress=checkersReport \
+            --suppress=functionStatic --suppress=constParameterPointer \
+            --language=c++ --std=c++17 -DPROGMEM= -I include src include
 
       - name: Build firmware
         run: pio run -e m5stack-unit-c6l

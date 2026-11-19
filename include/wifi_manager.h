@@ -8,6 +8,8 @@
 class WiFiManager {
   private:
     unsigned long lastConnectAttempt = 0;
+    bool connectAttempted = false;
+    bool connectionInProgress = false;
     bool isConnected = false;
     bool apModeActive = false;
     bool mdnsStarted = false;
@@ -19,7 +21,6 @@ class WiFiManager {
     bool init();
     bool connect();
     bool isWiFiConnected();
-    void reconnect();
     void handleWiFi();
     bool isApModeActive();
 

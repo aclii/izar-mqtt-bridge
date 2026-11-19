@@ -30,7 +30,7 @@ class ConfigManager {
   private:
     void load();
     void applyDefaults();
-    void copyString(char* dest, size_t destSize, const String& src);
+    static void copyString(char* dest, size_t destSize, const String& src);
 
     Preferences prefs;
     Config config{};
